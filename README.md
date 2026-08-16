@@ -17,7 +17,7 @@ A Python script for pulling level data from the **Impossible Levels List (ILL)**
 
 ## Installation
 
-1. Download the .py file to a new folder named "ILL data" or something
+1. Download the .py file to a new folder named "ILL_data" or something
 
 2. Install the dependency:
    ```bash
