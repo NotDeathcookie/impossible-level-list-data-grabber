@@ -1,110 +1,276 @@
 # ILL Data Grabber
 
-A Python script for pulling level data from the **Impossible Levels List (ILL)** API. Grab the top N hardest levels, or just one specific rank, and export the results to CSV and JSON.
+A Python command-line tool for retrieving level data from the
+**Impossible Levels List (ILL)** API and exporting it to CSV and JSON.
+
+The script supports three retrieval modes:
+
+-   **Top N:** fetch levels ranked from #1 through the requested rank.
+-   **Specific rank:** fetch only the level at one exact rank.
+-   **All:** fetch every level currently returned by the API.
+
+It also retrieves tier and tag definitions from the API, converts those
+IDs and rank brackets into readable values, and extracts creator and
+record information.
 
 ## Features
 
-- 📊 Grab the **top N levels** (e.g. top 100, top 2000)
-- 🎯 Grab **one specific level** by exact rank (e.g. only rank #53)
-- 🏷️ Automatically decodes tag IDs and tier brackets into readable names
-- 👤 Extracts creator names, world record holder, and best clear %
-- 📁 Auto-named output files based on what you requested
-- 💾 Saves both a clean, flattened **CSV** and a full raw **JSON** with all API data
+-   Fetch the top N levels (for example, the top 100 or top 2,000).
+-   Fetch one exact rank without downloading all higher-ranked levels.
+-   Fetch every available level returned by the API.
+-   Resolve tier names dynamically using the API's tier definitions.
+-   Convert tag IDs into readable tag names using the API's tag
+    definitions.
+-   Extract creator names and the best record returned for each level.
+-   Export a flattened CSV and an enriched JSON file.
+-   Choose a custom base filename for the output files.
 
 ## Requirements
 
-- Python 3.7+
+-   Python 3.7 or newer
+-   The `requests` package
 
 ## Installation
 
-1. Download the .py file to a new folder named "ILL_data" or something
+1.  Download `ILL_data_grabber.py` and place it in a folder of your
+    choice.
 
-2. Install the dependency:
-   ```bash
-   pip install requests
-   ```
+2.  Open a terminal or command prompt in that folder.
+
+3.  Install the dependency:
+
+    ``` bash
+    python -m pip install requests
+    ```
 
 ## Usage
 
 ### Interactive mode
 
-Just run the script with no arguments and it'll walk you through it:
+Run the script without arguments:
 
-```bash
+``` bash
 python ILL_data_grabber.py
 ```
 
-You'll be asked:
-```
+The script presents a menu:
+
+``` text
 What would you like to grab?
   1) Top N levels (e.g. the top 100 hardest levels)
   2) One specific level by rank (e.g. only the #53 hardest level)
-Enter 1 or 2 [default: 1]:
+  3) EVERY single available level on the list
+Enter 1, 2, or 3 [default: 1]:
 ```
+
+For Top N mode, the default amount is 2,000 if you leave the amount
+blank.
 
 ### Command-line mode
 
-**Grab the top N levels:**
-```bash
+#### Fetch the top N levels
+
+``` bash
 python ILL_data_grabber.py --top 100
 ```
-Saves `top_100_levels.csv` and `top_100_levels.json`.
 
-**Grab only one specific level by rank:**
-```bash
+Fetches ranks #1 through #100 and creates:
+
+-   `top_100_levels.csv`
+-   `top_100_levels.json`
+
+Short form:
+
+``` bash
+python ILL_data_grabber.py -t 100
+```
+
+#### Fetch one exact rank
+
+``` bash
 python ILL_data_grabber.py --rank 53
 ```
-Saves `level_53.csv` and `level_53.json` — this pulls **only** rank #53, not everything above it.
 
-**Override the output filename:**
-```bash
-python ILL_data_grabber.py --top 250 -o my_custom_name
-python ILL_data_grabber.py --rank 923 -o hardest_level_ever
+Fetches only rank #53. It does **not** fetch every level from #1 through
+#53.
+
+Creates:
+
+-   `level_53.csv`
+-   `level_53.json`
+
+Short form:
+
+``` bash
+python ILL_data_grabber.py -r 53
 ```
 
-### All options
+#### Fetch all available levels
 
-| Flag | Short | Description |
-|---|---|---|
-| `--top N` | `-t` | Fetch the top N levels (ranks 1 through N) |
-| `--rank N` | `-r` | Fetch only the single level at rank N |
-| `--output NAME` | `-o` | Custom base filename for output files (no extension) |
+``` bash
+python ILL_data_grabber.py --all
+```
 
-`--top` and `--rank` are mutually exclusive — pick one mode per run.
+Fetches pages until the API returns no data or a partial page, then
+creates:
+
+-   `ILL_data.csv`
+-   `ILL_data.json`
+
+Short form:
+
+``` bash
+python ILL_data_grabber.py -a
+```
+
+"All" means all levels the API makes available through the paginated
+endpoint at the time of the run. It does not guarantee that the API
+contains every level ever submitted to the ILL.
+
+#### Choose a custom output filename
+
+Use `--output` (or `-o`) to set the shared filename base. Do not include
+`.csv` or `.json`; the script adds those extensions.
+
+``` bash
+python ILL_data_grabber.py --top 250 -o my_custom_name
+python ILL_data_grabber.py --rank 923 -o hardest_level_ever
+python ILL_data_grabber.py --all -o complete_ill_export
+```
+
+For example, the first command creates `my_custom_name.csv` and
+`my_custom_name.json`.
+
+## Command-line options
+
+  -----------------------------------------------------------------------
+  Option                  Short form              Description
+  ----------------------- ----------------------- -----------------------
+  `--top N`               `-t N`                  Fetch ranks #1 through
+                                                  #N.
+
+  `--rank N`              `-r N`                  Fetch only the level at
+                                                  the exact rank N.
+
+  `--all`                 `-a`                    Fetch all levels
+                                                  available through the
+                                                  API's paginated
+                                                  endpoint.
+
+  `--output NAME`         `-o NAME`               Set the base name for
+                                                  both output files,
+                                                  without an extension.
+  -----------------------------------------------------------------------
+
+Choose only one retrieval mode: `--top`, `--rank`, or `--all`. These
+options are mutually exclusive.
+
+Ranks and Top N values must be positive integers.
 
 ## Output
 
+Each run creates two files in the current working directory:
+
+-   A **CSV** file containing flattened, spreadsheet-friendly fields.
+-   A **JSON** file retaining the API entry data and adding enriched
+    fields.
+
 ### CSV columns
 
-| Column | Description |
-|---|---|
-| Rank | Level's position on the list |
-| Level Name | Name of the level |
-| Tier | Difficulty tier bracket |
-| Creators | Level creator(s) |
-| Rating | Difficulty rating |
-| TPS/FPS | Ticks/frames per second |
-| Length (sec) | Level length in seconds |
-| Level ID | Geometry Dash level ID |
-| Uploader | Uploader's name |
-| Date Published | Publish date |
-| Cleared? | Whether the level has been cleared |
-| WR Holder | Player with the best record |
-| Best % | Best clear percentage |
-| Showcase Link | Link to a showcase video |
-| Tags | Comma-separated level tags |
+  -----------------------------------------------------------------------
+  Column                              Description
+  ----------------------------------- -----------------------------------
+  `Rank`                              The level's rank on the list.
 
-### JSON
+  `Level Name`                        The level name.
 
-Contains the full, unmodified data returned by the API for each level, plus three enriched fields:
-- `enrichedTier` — decoded tier name
-- `enrichedTags` — decoded tag names
-- `parsedCreators` — flattened creator names
+  `Tier`                              Tier name determined from the API's
+                                      tier brackets and the level's rank.
 
-## Notes
+  `Creators`                          Creator names joined into one
+                                      string.
 
-- The script is polite to the API and waits 0.3 seconds between page requests.
-- Data comes from `api.impossiblelevels.com`.
+  `Rating`                            Rating value supplied by the API.
+
+  `TPS/FPS`                           FPS value supplied by the API.
+
+  `Length (sec)`                      Level length supplied by the API.
+
+  `Level ID`                          Geometry Dash level ID.
+
+  `Uploader`                          Uploader name supplied by the API.
+
+  `Date Published`                    Publication date supplied by the
+                                      API.
+
+  `Cleared?`                          `No (Uncleared)` when the API's
+                                      `uncleared` value is true;
+                                      otherwise `Yes`.
+
+  `WR Holder`                         Player associated with the record
+                                      having the greatest `endDistance`,
+                                      if a record is available.
+
+  `Best %`                            That record's `endDistance` value.
+
+  `Showcase Link`                     Showcase link supplied by the API.
+
+  `Tags`                              Resolved tag names joined by
+                                      commas.
+  -----------------------------------------------------------------------
+
+Some values may be blank if the API does not provide the corresponding
+data.
+
+### JSON fields
+
+The JSON output preserves each original API entry and adds these fields
+at the entry's top level:
+
+-   `enrichedTier` --- the tier name resolved from the level's rank.
+-   `enrichedTags` --- resolved tag names joined into a comma-separated
+    string.
+-   `parsedCreators` --- creator names flattened into a comma-separated
+    string.
+
+The original API data, including nested level and record information, is
+retained.
+
+## How it works
+
+1.  Retrieves tier definitions from `/api/Tiers`.
+2.  Retrieves tag definitions from `/api/Tags`.
+3.  Requests level details from `/api/Levels/details` in pages of 100.
+4.  Converts each entry into a CSV row and an enriched JSON entry.
+5.  Sorts the collected results by rank and writes both output files.
+
+For record data, the script selects the record with the highest
+`endDistance` value. The CSV's `WR Holder` and `Best %` columns are
+taken from that record.
+
+The script waits 0.3 seconds between page requests in the Top N and All
+modes.
+
+## API
+
+Data is retrieved from:
+
+``` text
+https://api.impossiblelevels.com/api
+```
+
+The script uses the ILL API's tier, tag, and paginated level-details
+endpoints. API availability and the amount of data returned are outside
+the script's control.
+
+## Troubleshooting
+
+-   **`ModuleNotFoundError: No module named 'requests'`** --- install
+    the dependency with `python -m pip install requests`.
+-   **No data was fetched** --- check your internet connection and
+    whether the ILL API is reachable.
+-   **A requested rank is not found** --- the API did not return that
+    rank on the page requested by the script.
 
 ## License
 
